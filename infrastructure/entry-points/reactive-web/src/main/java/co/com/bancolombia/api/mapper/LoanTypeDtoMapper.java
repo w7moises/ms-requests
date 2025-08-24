@@ -3,7 +3,6 @@ package co.com.bancolombia.api.mapper;
 import co.com.bancolombia.api.dto.loantype.CreateLoanTypeDto;
 import co.com.bancolombia.api.dto.loantype.EditLoanTypeDto;
 import co.com.bancolombia.api.dto.loantype.LoanTypeDto;
-import co.com.bancolombia.model.loanpetition.LoanPetition;
 import co.com.bancolombia.model.loantype.LoanType;
 import org.mapstruct.Mapper;
 
@@ -15,7 +14,7 @@ public interface LoanTypeDtoMapper {
 
     List<LoanTypeDto> toResponseList(List<LoanType> loanTypes);
 
-    LoanPetition toModel(CreateLoanTypeDto createLoanTypeDto);
+    LoanType toModel(CreateLoanTypeDto createLoanTypeDto);
 
-    LoanPetition toModel(EditLoanTypeDto editLoanTypeDto);
+    LoanType toModel(EditLoanTypeDto editLoanTypeDto);
 }

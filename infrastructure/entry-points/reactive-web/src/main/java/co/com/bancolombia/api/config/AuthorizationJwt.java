@@ -40,9 +40,9 @@ public class AuthorizationJwt implements WebFluxConfigurer {
     private static final String AZP = "azp";
 
     public AuthorizationJwt(@Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuerUri,
-                         @Value("${spring.security.oauth2.resourceserver.jwt.client-id}") String clientId,
-                         @Value("${jwt.json-exp-roles}") String jsonExpRoles,
-                         ObjectMapper mapper) {
+                            @Value("${spring.security.oauth2.resourceserver.jwt.client-id}") String clientId,
+                            @Value("${jwt.json-exp-roles}") String jsonExpRoles,
+                            ObjectMapper mapper) {
         this.issuerUri = issuerUri;
         this.clientId = clientId;
         this.jsonExpRoles = jsonExpRoles;
@@ -52,14 +52,18 @@ public class AuthorizationJwt implements WebFluxConfigurer {
     @Bean
     public SecurityWebFilterChain filterChain(ServerHttpSecurity http) {
         http
-            .authorizeExchange(authorize -> authorize.anyExchange().authenticated())
-            .oauth2ResourceServer(oauth2 ->
-                    oauth2.jwt(jwtSpec ->
-                            jwtSpec
-                            .jwtDecoder(jwtDecoder())
-                            .jwtAuthenticationConverter(grantedAuthoritiesExtractor())
-                    )
-            );
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .authorizeExchange(authorize -> authorize
+                        .pathMatchers("/**").permitAll()
+                        .anyExchange()
+                        .authenticated())
+                .oauth2ResourceServer(oauth2 ->
+                        oauth2.jwt(jwtSpec ->
+                                jwtSpec
+                                        .jwtDecoder(jwtDecoder())
+                                        .jwtAuthenticationConverter(grantedAuthoritiesExtractor())
+                        )
+                );
         return http.build();
     }
 
@@ -80,19 +84,20 @@ public class AuthorizationJwt implements WebFluxConfigurer {
         var jwtConverter = new JwtAuthenticationConverter();
         jwtConverter.setJwtGrantedAuthoritiesConverter(jwt ->
                 getRoles(jwt.getClaims(), jsonExpRoles)
-                .stream()
-                .map(ROLE::concat)
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList()));
+                        .stream()
+                        .map(ROLE::concat)
+                        .map(SimpleGrantedAuthority::new)
+                        .collect(Collectors.toList()));
         return new ReactiveJwtAuthenticationConverterAdapter(jwtConverter);
     }
 
-    private List<String> getRoles(Map<String, Object> claims, String jsonExpClaim){
+    private List<String> getRoles(Map<String, Object> claims, String jsonExpClaim) {
         List<String> roles = List.of();
         try {
             var json = mapper.writeValueAsString(claims);
             var chunk = mapper.readTree(json).at(jsonExpClaim);
-            return mapper.readerFor(new TypeReference<List<String>>() {})
+            return mapper.readerFor(new TypeReference<List<String>>() {
+                    })
                     .readValue(chunk);
         } catch (IOException e) {
             log.error(e.getMessage());

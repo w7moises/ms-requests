@@ -7,6 +7,7 @@ public record LoanTypeDto(
         String name,
         BigDecimal minAmount,
         BigDecimal maxAmount,
+        BigDecimal interestRate,
         Boolean automaticValidation
 ) {
 }

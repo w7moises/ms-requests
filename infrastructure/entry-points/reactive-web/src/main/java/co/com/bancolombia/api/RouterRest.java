@@ -10,11 +10,20 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 @Configuration
 public class RouterRest {
     @Bean
-    public RouterFunction<ServerResponse> routerFunction(HandlerV1 handlerV1, HandlerV2 handlerV2) {
+    public RouterFunction<ServerResponse> routerFunction(StateHandler stateHandler, LoanTypeHandler loanTypeHandler) {
         return RouterFunctions
-            .route()
-            .path("/api/v1", builder -> builder.GET("/usecase/path", handlerV1::listenGETUseCase).POST("/usecase/otherpath", handlerV1::listenPOSTUseCase).GET("/otherusercase/path", handlerV1::listenGETOtherUseCase))
-            .path("/api/v2", builder -> builder.GET("/usecase/path", handlerV2::listenGETUseCase).POST("/usecase/otherpath", handlerV2::listenPOSTUseCase).GET("/otherusercase/path", handlerV2::listenGETOtherUseCase))
-            .build();
-        }
+                .route()
+                .path("/api/v1/states", builder -> builder
+                        .GET("", stateHandler::getAllStates)
+                        .POST("", stateHandler::createState)
+                        .GET("/{id}", stateHandler::findStateById)
+                        .PUT("/{id}", stateHandler::updateState))
+                .path("/api/v1/loanTypes", builder -> builder
+                        .GET("", loanTypeHandler::getAllLoanTypes)
+                        .POST("", loanTypeHandler::createLoanType)
+                        .GET("/{id}", loanTypeHandler::getLoanTypeById)
+                        .PUT("/{id}", loanTypeHandler::updateLoanType)
+                        .DELETE("/{id}", loanTypeHandler::deleteLoanType))
+                .build();
+    }
 }

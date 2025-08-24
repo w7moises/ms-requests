@@ -8,7 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-@ContextConfiguration(classes = {RouterRest.class, HandlerV1.class, HandlerV2.class})
+@ContextConfiguration(classes = {RouterRest.class, StateHandler.class, LoanTypeHandler.class, LoanPetitionHandler.class})
 @WebFluxTest
 class RouterRestTest {
 
@@ -28,6 +28,7 @@ class RouterRestTest {
                         }
                 );
     }
+
     @Test
     void testListenGETUseCaseV2() {
         webTestClient.get()
@@ -55,6 +56,7 @@ class RouterRestTest {
                         }
                 );
     }
+
     @Test
     void testListenGETOtherUseCaseV2() {
         webTestClient.get()
@@ -83,6 +85,7 @@ class RouterRestTest {
                         }
                 );
     }
+
     @Test
     void testListenPOSTUseCaseV2() {
         webTestClient.post()
