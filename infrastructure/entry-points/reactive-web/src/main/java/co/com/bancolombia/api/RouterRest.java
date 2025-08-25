@@ -27,6 +27,8 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 
 @Configuration
 public class RouterRest {
+    private static final String ID_PATH = "/{id}";
+
     @RouterOperations({
             @RouterOperation(
                     path = "/api/v1/states",
@@ -282,18 +284,18 @@ public class RouterRest {
         return RouterFunctions
                 .route()
                 .path("/api/v1/states", builder -> builder
-                        .GET("", stateHandler::getAllStates)
+                        .GET("", request -> stateHandler.getAllStates())
                         .POST("", stateHandler::createState)
-                        .GET("/{id}", stateHandler::findStateById)
-                        .PUT("/{id}", stateHandler::updateState))
+                        .GET(ID_PATH, stateHandler::findStateById)
+                        .PUT(ID_PATH, stateHandler::updateState))
                 .path("/api/v1/loanTypes", builder -> builder
-                        .GET("", loanTypeHandler::getAllLoanTypes)
+                        .GET("", request -> loanTypeHandler.getAllLoanTypes())
                         .POST("", loanTypeHandler::createLoanType)
-                        .GET("/{id}", loanTypeHandler::getLoanTypeById)
-                        .PUT("/{id}", loanTypeHandler::updateLoanType)
-                        .DELETE("/{id}", loanTypeHandler::deleteLoanType))
+                        .GET(ID_PATH, loanTypeHandler::getLoanTypeById)
+                        .PUT(ID_PATH, loanTypeHandler::updateLoanType)
+                        .DELETE(ID_PATH, loanTypeHandler::deleteLoanType))
                 .path("/api/v1/loanPetitions", builder -> builder
-                        .GET("", loanPetitionHandler::getAllPetitions)
+                        .GET("", request -> loanPetitionHandler.getAllPetitions())
                         .POST("", loanPetitionHandler::createPetition)
                         .GET("/email/{email}", loanPetitionHandler::getPetitionsByEmail)
                         .GET("/document/{documentNumber}", loanPetitionHandler::getPetitionsByDocumentNumber))
