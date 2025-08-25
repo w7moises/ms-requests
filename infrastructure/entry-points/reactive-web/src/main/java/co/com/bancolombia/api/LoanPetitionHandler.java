@@ -35,7 +35,7 @@ public class LoanPetitionHandler {
                 });
     }
 
-    public Mono<ServerResponse> getAllPetitions(ServerRequest request) {
+    public Mono<ServerResponse> getAllPetitions() {
         return ServerResponse.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(loanPetitionUseCase.findAllPetitions(), LoanPetitionDto.class);

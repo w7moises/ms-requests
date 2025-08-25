@@ -14,7 +14,7 @@ import reactor.core.publisher.Mono;
 public class StateHandler {
     private final StateUseCase stateUseCase;
 
-    public Mono<ServerResponse> getAllStates(ServerRequest request) {
+    public Mono<ServerResponse> getAllStates() {
         return ServerResponse.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(stateUseCase.findAllStates(), State.class);

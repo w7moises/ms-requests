@@ -59,7 +59,7 @@ public class LoanTypeHandler {
                         .bodyValue(dto));
     }
 
-    public Mono<ServerResponse> getAllLoanTypes(ServerRequest request) {
+    public Mono<ServerResponse> getAllLoanTypes() {
         return ServerResponse.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(loanTypeUseCase.findAllLoanTypes(), LoanTypeDto.class);
