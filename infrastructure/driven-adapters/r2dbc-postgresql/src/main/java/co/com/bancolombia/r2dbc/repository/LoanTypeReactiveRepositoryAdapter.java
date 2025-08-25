@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
+
 @Repository
 public class LoanTypeReactiveRepositoryAdapter extends ReactiveAdapterOperations<
         LoanType,
@@ -49,6 +51,13 @@ public class LoanTypeReactiveRepositoryAdapter extends ReactiveAdapterOperations
     public Mono<LoanType> findLoanTypeById(Long id) {
         return super.findById(id)
                 .switchIfEmpty(Mono.error(new NotFoundException("loanType.notFound.id", id)));
+    }
+
+    @Override
+    public Mono<LoanType> findLoanTypeByMinAndMaxAmount(BigDecimal amount) {
+        return repository.findLoanTypeByAmount(amount)
+                .map(this::toEntity)
+                .switchIfEmpty(Mono.error(new NotFoundException("loanType.notFound.amount", amount)));
     }
 
     @Transactional(transactionManager = "r2dbcTransactionManager", readOnly = true)
