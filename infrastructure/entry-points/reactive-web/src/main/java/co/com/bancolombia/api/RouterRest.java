@@ -10,7 +10,8 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 @Configuration
 public class RouterRest {
     @Bean
-    public RouterFunction<ServerResponse> routerFunction(StateHandler stateHandler, LoanTypeHandler loanTypeHandler) {
+    public RouterFunction<ServerResponse> routerFunction(StateHandler stateHandler, LoanTypeHandler loanTypeHandler,
+                                                         LoanPetitionHandler loanPetitionHandler) {
         return RouterFunctions
                 .route()
                 .path("/api/v1/states", builder -> builder
@@ -24,6 +25,11 @@ public class RouterRest {
                         .GET("/{id}", loanTypeHandler::getLoanTypeById)
                         .PUT("/{id}", loanTypeHandler::updateLoanType)
                         .DELETE("/{id}", loanTypeHandler::deleteLoanType))
+                .path("/api/v1/loanPetitions", builder -> builder
+                        .GET("", loanPetitionHandler::getAllPetitions)
+                        .POST("", loanPetitionHandler::createPetition)
+                        .GET("/email/{email}", loanPetitionHandler::getPetitionsByEmail)
+                        .GET("/document/{documentNumber}", loanPetitionHandler::getPetitionsByDocumentNumber))
                 .build();
     }
 }
