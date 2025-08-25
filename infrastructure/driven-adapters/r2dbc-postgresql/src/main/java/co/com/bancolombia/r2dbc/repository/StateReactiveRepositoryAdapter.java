@@ -37,13 +37,11 @@ public class StateReactiveRepositoryAdapter extends ReactiveAdapterOperations<
         return super.findAll();
     }
 
-
     @Transactional(transactionManager = "r2dbcTransactionManager")
     @Override
     public Mono<State> saveState(State state) {
         return super.save(state);
     }
-
 
     @Transactional(transactionManager = "r2dbcTransactionManager")
     @Override

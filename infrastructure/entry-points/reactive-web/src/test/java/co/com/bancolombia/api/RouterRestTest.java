@@ -52,7 +52,7 @@ class RouterRestTest {
 
     @MockitoBean
     private LoanPetitionUseCase loanPetitionUseCase;
-    
+
     private State stateMock;
     private State stateUpdated;
     private LoanType loanTypeMock;
