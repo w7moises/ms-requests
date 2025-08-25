@@ -1,8 +1,10 @@
-package co.com.bancolombia.r2dbc.repository;
+package co.com.bancolombia.r2dbc;
 
 import co.com.bancolombia.model.state.State;
 import co.com.bancolombia.r2dbc.entity.StateEntity;
 import co.com.bancolombia.r2dbc.exception.NotFoundException;
+import co.com.bancolombia.r2dbc.repository.StateReactiveRepository;
+import co.com.bancolombia.r2dbc.repository.StateReactiveRepositoryAdapter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

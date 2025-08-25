@@ -24,6 +24,9 @@ public class LoanTypeReactiveRepositoryAdapter extends ReactiveAdapterOperations
         super(repository, mapper, d -> mapper.map(d, LoanType.class));
     }
 
+    private static final String LOAN_TYPE_NOT_FOUND_ID = "loanType.notFound.id";
+    private static final String LOAN_TYPE_NOT_FOUND_AMOUNT = "loanType.notFound.amount";
+
     @Transactional(transactionManager = "r2dbcTransactionManager")
     @Override
     public Mono<LoanType> saveLoanType(LoanType loanType) {
@@ -34,7 +37,7 @@ public class LoanTypeReactiveRepositoryAdapter extends ReactiveAdapterOperations
     @Override
     public Mono<LoanType> updateLoanType(LoanType loanType) {
         return super.findById(loanType.getId())
-                .switchIfEmpty(Mono.error(new NotFoundException("loanType.notFound.id", loanType.getId())))
+                .switchIfEmpty(Mono.error(new NotFoundException(LOAN_TYPE_NOT_FOUND_ID, loanType.getId())))
                 .flatMap(data -> super.save(loanType));
     }
 
@@ -42,7 +45,7 @@ public class LoanTypeReactiveRepositoryAdapter extends ReactiveAdapterOperations
     @Override
     public Mono<Void> deleteLoanType(Long id) {
         return super.findById(id)
-                .switchIfEmpty(Mono.error(new NotFoundException("loanType.notFound.id", id)))
+                .switchIfEmpty(Mono.error(new NotFoundException(LOAN_TYPE_NOT_FOUND_ID, id)))
                 .flatMap(entity -> repository.deleteById(entity.getId()));
     }
 
@@ -50,14 +53,14 @@ public class LoanTypeReactiveRepositoryAdapter extends ReactiveAdapterOperations
     @Override
     public Mono<LoanType> findLoanTypeById(Long id) {
         return super.findById(id)
-                .switchIfEmpty(Mono.error(new NotFoundException("loanType.notFound.id", id)));
+                .switchIfEmpty(Mono.error(new NotFoundException(LOAN_TYPE_NOT_FOUND_ID, id)));
     }
 
     @Override
     public Mono<LoanType> findLoanTypeByMinAndMaxAmount(BigDecimal amount) {
         return repository.findLoanTypeByAmount(amount)
                 .map(this::toEntity)
-                .switchIfEmpty(Mono.error(new NotFoundException("loanType.notFound.amount", amount)));
+                .switchIfEmpty(Mono.error(new NotFoundException(LOAN_TYPE_NOT_FOUND_AMOUNT, amount)));
     }
 
     @Transactional(transactionManager = "r2dbcTransactionManager", readOnly = true)
