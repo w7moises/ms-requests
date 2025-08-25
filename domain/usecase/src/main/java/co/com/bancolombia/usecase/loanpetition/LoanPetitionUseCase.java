@@ -20,15 +20,16 @@ public class LoanPetitionUseCase {
     private final LoanTypeRepository loanTypeRepository;
 
     public Mono<LoanPetition> savePetition(LoanPetition loanPetition) {
-        return loanTypeRepository.findLoanTypeByMinAndMaxAmount(loanPetition.getAmount())
-                .zipWith(userRepository.findUserByDocumentNumber(loanPetition.getDocumentNumber()))
-                .zipWith(stateRepository.findAllStates()
-                        .filter(state -> "APROBADO".equalsIgnoreCase(state.getName()))
-                        .next())
+        Mono<LoanType> loanTypeMono = loanTypeRepository.findLoanTypeByMinAndMaxAmount(loanPetition.getAmount());
+        Mono<User> userMono = userRepository.findUserByDocumentNumber(loanPetition.getDocumentNumber());
+        Mono<State> stateMono = stateRepository.findAllStates()
+                .filter(state -> "PENDIENTE DE REVISION".equalsIgnoreCase(state.getName()))
+                .next();
+        return Mono.zip(loanTypeMono, userMono, stateMono)
                 .flatMap(tuple -> {
-                    LoanType loanType = tuple.getT1().getT1();
-                    User user = tuple.getT1().getT2();
-                    State state = tuple.getT2();
+                    LoanType loanType = tuple.getT1();
+                    User user = tuple.getT2();
+                    State state = tuple.getT3();
                     loanPetition.setEmail(user.getEmail());
                     loanPetition.setLoanTypeId(loanType.getId());
                     loanPetition.setStateId(state.getId());
