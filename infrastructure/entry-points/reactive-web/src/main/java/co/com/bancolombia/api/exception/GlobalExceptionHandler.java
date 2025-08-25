@@ -16,8 +16,10 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.*;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
+import reactor.util.annotation.NonNull;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -101,5 +103,25 @@ public class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
     }
 
     private record I18nPayload(String code, Object[] args) {
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof I18nPayload that)) return false;
+            return code.equals(that.code) && Arrays.equals(args, that.args);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = code.hashCode();
+            result = 31 * result + Arrays.hashCode(args);
+            return result;
+        }
+
+        @Override
+        @NonNull
+        public String toString() {
+            return code + "=" + Arrays.toString(args);
+        }
     }
 }

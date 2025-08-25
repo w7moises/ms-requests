@@ -21,6 +21,12 @@ import java.util.Map;
 public class GlobalErrorAttributes extends DefaultErrorAttributes {
 
     private final MessageSource messageSource;
+    public static final String STATUS = "status";
+    public static final String ERROR = "error";
+    public static final String MESSAGE = "message";
+    public static final String ERRORS = "errors";
+    public static final String FIELD = "field";
+    public static final String REJECTED_VALUE = "rejectedValue";
 
     public GlobalErrorAttributes(MessageSource messageSource) {
         this.messageSource = messageSource;
@@ -36,9 +42,9 @@ public class GlobalErrorAttributes extends DefaultErrorAttributes {
         Locale locale = resolveLocale(request);
 
         if (error instanceof ConstraintViolationException cve) {
-            attrs.put("status", 400);
-            attrs.put("error", "Bad Request");
-            attrs.put("message", msg(locale, "validation.failed", "Validation failed"));
+            attrs.put(STATUS, 400);
+            attrs.put(ERROR, "Bad Request");
+            attrs.put(MESSAGE, msg(locale, "validation.failed", "Validation failed"));
             List<Map<String, Object>> violations = cve.getConstraintViolations().stream()
                     .map(v -> errorEntry(
                             v.getPropertyPath() != null ? v.getPropertyPath().toString() : null,
@@ -46,12 +52,12 @@ public class GlobalErrorAttributes extends DefaultErrorAttributes {
                             v.getInvalidValue()
                     ))
                     .toList();
-            attrs.put("errors", violations);
+            attrs.put(ERRORS, violations);
 
         } else if (error instanceof WebExchangeBindException web) {
-            attrs.put("status", 400);
-            attrs.put("error", "Bad Request");
-            attrs.put("message", msg(locale, "binding.failed", "Binding failed"));
+            attrs.put(STATUS, 400);
+            attrs.put(ERROR, "Bad Request");
+            attrs.put(MESSAGE, msg(locale, "binding.failed", "Binding failed"));
 
             List<Map<String, Object>> fieldErrors = web.getFieldErrors().stream()
                     .map(fe -> errorEntry(
@@ -71,7 +77,7 @@ public class GlobalErrorAttributes extends DefaultErrorAttributes {
             var all = new java.util.ArrayList<Map<String, Object>>(fieldErrors.size() + globalErrors.size());
             all.addAll(fieldErrors);
             all.addAll(globalErrors);
-            attrs.put("errors", all);
+            attrs.put(ERRORS, all);
         }
         return attrs;
     }
@@ -113,6 +119,7 @@ public class GlobalErrorAttributes extends DefaultErrorAttributes {
             try {
                 return messageSource.getMessage(code, null, code, locale);
             } catch (NoSuchMessageException ignored) {
+                return "Error: " + code;
             }
         }
         return v.getMessage();
@@ -120,9 +127,9 @@ public class GlobalErrorAttributes extends DefaultErrorAttributes {
 
     private static Map<String, Object> errorEntry(String field, String message, Object rejectedValue) {
         var m = new LinkedHashMap<String, Object>(3);
-        m.put("field", field);
-        m.put("message", message);
-        m.put("rejectedValue", rejectedValue);
+        m.put(FIELD, field);
+        m.put(MESSAGE, message);
+        m.put(REJECTED_VALUE, rejectedValue);
         return m;
     }
 }

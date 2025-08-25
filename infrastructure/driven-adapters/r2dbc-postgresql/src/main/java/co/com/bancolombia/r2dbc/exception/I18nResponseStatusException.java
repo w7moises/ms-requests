@@ -7,7 +7,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Getter
 public abstract class I18nResponseStatusException extends ResponseStatusException {
     private final String code;
-    private final Object[] args;
+    private final transient Object[] args;
 
     protected I18nResponseStatusException(HttpStatus status, String code, Object... args) {
         super(status, code);

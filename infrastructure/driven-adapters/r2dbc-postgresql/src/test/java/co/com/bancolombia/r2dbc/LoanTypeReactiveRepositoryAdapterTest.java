@@ -1,9 +1,10 @@
-package co.com.bancolombia.r2dbc.repository;
+package co.com.bancolombia.r2dbc;
 
 import co.com.bancolombia.model.loantype.LoanType;
-import co.com.bancolombia.model.user.User;
 import co.com.bancolombia.r2dbc.entity.LoanTypeEntity;
 import co.com.bancolombia.r2dbc.exception.NotFoundException;
+import co.com.bancolombia.r2dbc.repository.LoanTypeReactiveRepository;
+import co.com.bancolombia.r2dbc.repository.LoanTypeReactiveRepositoryAdapter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
