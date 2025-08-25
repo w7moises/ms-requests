@@ -1,5 +1,9 @@
 package co.com.bancolombia.config;
 
+import co.com.bancolombia.model.loanpetition.gateways.LoanPetitionRepository;
+import co.com.bancolombia.model.loantype.gateways.LoanTypeRepository;
+import co.com.bancolombia.model.state.gateways.StateRepository;
+import co.com.bancolombia.model.user.gateways.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -7,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 public class UseCasesConfigTest {
 
@@ -30,6 +35,26 @@ public class UseCasesConfigTest {
     @Configuration
     @Import(UseCasesConfig.class)
     static class TestConfig {
+
+        @Bean
+        public LoanPetitionRepository loanPetitionRepository() {
+            return mock(LoanPetitionRepository.class);
+        }
+
+        @Bean
+        public LoanTypeRepository loanTypeRepository() {
+            return mock(LoanTypeRepository.class);
+        }
+
+        @Bean
+        public StateRepository stateRepository() {
+            return mock(StateRepository.class);
+        }
+
+        @Bean
+        public UserRepository userRepository() {
+            return mock(UserRepository.class);
+        }
 
         @Bean
         public MyUseCase myUseCase() {
