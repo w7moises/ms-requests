@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8090
 spring:
   application:
     name: "LoanRequest"
@@ -58,3 +58,12 @@ jwt:
   json-exp-roles: "/roles"
 cors:
   allowed-origins: "http://localhost:4200,http://localhost:8080"
+
+adapters:
+  r2dbc:
+    host: "localhost"
+    port: 5432
+    database: "ms_request"
+    schema: "public"
+    username: "postgres"
+    password: "admin123"
