@@ -56,6 +56,7 @@ resilience4j:
         waitDurationInOpenState: "10s"
 jwt:
   json-exp-roles: "/roles"
+  secret-base64: "q2Tt7cQ7Yb1j0x8C6q1r3kCw9UYw1QmV1wq3x8iWg0c1m6rKzG3mZw=="
 cors:
   allowed-origins: "http://localhost:4200,http://localhost:8080"
 

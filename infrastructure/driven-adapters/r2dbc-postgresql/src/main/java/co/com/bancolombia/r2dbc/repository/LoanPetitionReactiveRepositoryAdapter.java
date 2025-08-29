@@ -5,12 +5,14 @@ import co.com.bancolombia.model.loanpetition.gateways.LoanPetitionRepository;
 import co.com.bancolombia.r2dbc.entity.LoanPetitionEntity;
 import co.com.bancolombia.r2dbc.exception.NotFoundException;
 import co.com.bancolombia.r2dbc.helper.ReactiveAdapterOperations;
+import lombok.extern.slf4j.Slf4j;
 import org.reactivecommons.utils.ObjectMapper;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Repository
 public class LoanPetitionReactiveRepositoryAdapter extends ReactiveAdapterOperations<
         LoanPetition,
@@ -25,6 +27,7 @@ public class LoanPetitionReactiveRepositoryAdapter extends ReactiveAdapterOperat
     @Transactional(transactionManager = "r2dbcTransactionManager")
     @Override
     public Mono<LoanPetition> savePetition(LoanPetition loanPetition) {
+        log.info("Saving loan Petition {}", loanPetition);
         return super.save(loanPetition);
     }
 

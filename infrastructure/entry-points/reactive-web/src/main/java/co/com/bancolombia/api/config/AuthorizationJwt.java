@@ -13,6 +13,7 @@ import org.springframework.security.config.annotation.web.reactive.EnableWebFlux
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter;
@@ -20,7 +21,9 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 import reactor.core.publisher.Mono;
 
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -34,6 +37,7 @@ public class AuthorizationJwt implements WebFluxConfigurer {
     private final String issuerUri;
     private final String clientId;
     private final String jsonExpRoles;
+    private final byte[] secretKey;
 
     private final ObjectMapper mapper;
     private static final String ROLE = "ROLE_";
@@ -42,10 +46,12 @@ public class AuthorizationJwt implements WebFluxConfigurer {
     public AuthorizationJwt(@Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuerUri,
                             @Value("${spring.security.oauth2.resourceserver.jwt.client-id}") String clientId,
                             @Value("${jwt.json-exp-roles}") String jsonExpRoles,
+                            @Value("${jwt.secret-base64}") String secretB64,
                             ObjectMapper mapper) {
         this.issuerUri = issuerUri;
         this.clientId = clientId;
         this.jsonExpRoles = jsonExpRoles;
+        this.secretKey = Base64.getDecoder().decode(secretB64);
         this.mapper = mapper;
     }
 
@@ -68,16 +74,13 @@ public class AuthorizationJwt implements WebFluxConfigurer {
     }
 
     public ReactiveJwtDecoder jwtDecoder() {
-        var defaultValidator = JwtValidators.createDefaultWithIssuer(issuerUri);
-        var audienceValidator = new JwtClaimValidator<String>(AZP,
+        var key = new SecretKeySpec(secretKey, "HmacSHA256");
+        var decoder = NimbusReactiveJwtDecoder.withSecretKey(key).build();
+        OAuth2TokenValidator<Jwt> issuerValidator = JwtValidators.createDefaultWithIssuer(issuerUri);
+        var azpValidator = new JwtClaimValidator<String>(AZP,
                 azp -> azp != null && !azp.isEmpty() && azp.equals(clientId));
-        var tokenValidator = new DelegatingOAuth2TokenValidator<>(defaultValidator, audienceValidator);
-        var jwtDecoder = NimbusReactiveJwtDecoder
-                .withIssuerLocation(issuerUri)
-                .build();
-
-        jwtDecoder.setJwtValidator(tokenValidator);
-        return jwtDecoder;
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(issuerValidator, azpValidator));
+        return decoder;
     }
 
     public Converter<Jwt, Mono<AbstractAuthenticationToken>> grantedAuthoritiesExtractor() {
@@ -85,7 +88,7 @@ public class AuthorizationJwt implements WebFluxConfigurer {
         jwtConverter.setJwtGrantedAuthoritiesConverter(jwt ->
                 getRoles(jwt.getClaims(), jsonExpRoles)
                         .stream()
-                        .map(ROLE::concat)
+                        .map(role -> role.startsWith(ROLE) ? role : ROLE + role)
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList()));
         return new ReactiveJwtAuthenticationConverterAdapter(jwtConverter);
