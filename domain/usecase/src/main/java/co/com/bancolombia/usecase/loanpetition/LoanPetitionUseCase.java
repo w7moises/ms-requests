@@ -27,13 +27,9 @@ public class LoanPetitionUseCase {
                 .next();
         return Mono.zip(loanTypeMono, userMono, stateMono)
                 .flatMap(tuple -> {
-                    System.out.println("Entro");
                     LoanType loanType = tuple.getT1();
                     User user = tuple.getT2();
                     State state = tuple.getT3();
-                    System.out.println(user.getEmail());
-                    System.out.println(state.getName());
-                    System.out.println(loanPetition.getAmount());
                     loanPetition.setEmail(user.getEmail());
                     loanPetition.setLoanTypeId(loanType.getId());
                     loanPetition.setStateId(state.getId());
