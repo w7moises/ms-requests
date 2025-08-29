@@ -8,10 +8,13 @@ import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
+
+import static co.com.bancolombia.api.utils.TokenInformationMapper.getDocumentNumberFromToken;
 
 @Component
 @RequiredArgsConstructor
@@ -21,17 +24,23 @@ public class LoanPetitionHandler {
     private final Validator validator;
     private final LoanPetitionDtoMapper loanPetitionDtoMapper;
 
+    @PreAuthorize("hasRole('USER')")
     public Mono<ServerResponse> createPetition(ServerRequest request) {
         return request.bodyToMono(CreateLoanPetitionDto.class)
                 .flatMap(dto -> {
                     var violations = validator.validate(dto);
                     if (!violations.isEmpty())
                         return Mono.error(new ConstraintViolationException(violations));
-                    return loanPetitionUseCase.savePetition(loanPetitionDtoMapper.toModel(dto))
-                            .map(loanPetitionDtoMapper::toResponse)
-                            .flatMap(data -> ServerResponse.ok()
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .bodyValue(data));
+                    return getDocumentNumberFromToken().flatMap(documentNumber -> {
+                        if (!documentNumber.equals(dto.documentNumber()))
+                            return Mono.error(new RuntimeException("Document number mismatch"));
+                        else
+                            return loanPetitionUseCase.savePetition(loanPetitionDtoMapper.toModel(dto))
+                                    .map(loanPetitionDtoMapper::toResponse)
+                                    .flatMap(data -> ServerResponse.ok()
+                                            .contentType(MediaType.APPLICATION_JSON)
+                                            .bodyValue(data));
+                    });
                 });
     }
 
