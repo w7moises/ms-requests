@@ -2,6 +2,7 @@ package co.com.bancolombia.api;
 
 import co.com.bancolombia.api.dto.loanpetition.CreateLoanPetitionDto;
 import co.com.bancolombia.api.dto.loanpetition.LoanPetitionDto;
+import co.com.bancolombia.api.dto.pagination.PagedDataResponse;
 import co.com.bancolombia.api.mapper.LoanPetitionDtoMapper;
 import co.com.bancolombia.usecase.loanpetition.LoanPetitionUseCase;
 import jakarta.validation.ConstraintViolationException;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
+
+import java.math.BigDecimal;
 
 import static co.com.bancolombia.api.utils.TokenInformationMapper.getDocumentNumberFromToken;
 
@@ -48,6 +51,19 @@ public class LoanPetitionHandler {
         return ServerResponse.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(loanPetitionUseCase.findAllPetitions(), LoanPetitionDto.class);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public Mono<ServerResponse> getAllPetitionsFiltered(ServerRequest request) {
+        Integer stateId = request.queryParam("stateId").map(Integer::valueOf).orElse(null);
+        Long loanTypeId = request.queryParam("loanTypeId").map(Long::valueOf).orElse(null);
+        String documentNumber = request.queryParam("documentNumber").orElse(null);
+        int page = Integer.parseInt(request.queryParam("page").orElse("0"));
+        int size = Integer.parseInt(request.queryParam("size").orElse("10"));
+        return loanPetitionUseCase.findAllPetitionsFiltered(stateId, loanTypeId, documentNumber, page, size)
+                .flatMap(data -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(data));
     }
 
     public Mono<ServerResponse> getPetitionsByEmail(ServerRequest request) {
