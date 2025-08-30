@@ -5,13 +5,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PagedGroupedResponse {
-    private PageDto page;
-    private List<UserGroupDto> groups;
+public class DataGroupDto {
+    private UserDto user;
+    private List<PetitionItemDto> loanPetitions;
+    private BigDecimal totalMonthlyDebt;
 }

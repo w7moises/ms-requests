@@ -1,6 +1,7 @@
 package co.com.bancolombia.model.loanpetition.gateways;
 
 import co.com.bancolombia.model.loanpetition.LoanPetition;
+import co.com.bancolombia.model.response.LoanPetitionResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -12,4 +13,9 @@ public interface LoanPetitionRepository {
     Flux<LoanPetition> findAllPetitionsByEmail(String email);
 
     Flux<LoanPetition> findAllPetitionsByDocumentNumber(String documentNumber);
+
+    Flux<LoanPetitionResponse> findLoanPetitionsPageFiltered(Integer stateId, Long loanTypeId, String doc,
+                                                             int size, int offset);
+
+    Mono<Long> countFiltered(Integer stateId, Long loanTypeId, String doc);
 }

@@ -14,13 +14,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
-import java.math.RoundingMode;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
-import static co.com.bancolombia.usecase.util.MathUtil.monthlyDebtCalculation;
 
 @RequiredArgsConstructor
 public class LoanPetitionUseCase {
@@ -51,131 +46,81 @@ public class LoanPetitionUseCase {
         return loanPetitionRepository.findAllPetitions();
     }
 
-    public Mono<PagedGroupedResponse> findAllPetitionsFiltered(
+    public Mono<PagedDataResponse> findAllPetitionsFiltered(
             Integer stateId, Long loanTypeId, String document,
             int page, int size) {
 
-        Flux<LoanPetition> loanPetitionList = (document != null && !document.isBlank())
-                ? loanPetitionRepository.findAllPetitionsByDocumentNumber(document)
-                : loanPetitionRepository.findAllPetitions();
+        int safeSize = Math.max(1, size);
+        int offset = Math.max(0, page) * safeSize;
+        Mono<List<LoanPetitionResponse>> rowsMono = loanPetitionRepository
+                .findLoanPetitionsPageFiltered(stateId, loanTypeId, document, safeSize, offset)
+                .collectList();
+        Mono<Long> totalMono = loanPetitionRepository.countFiltered(stateId, loanTypeId, document);
 
-        Flux<LoanPetition> loanPetitionListFiltered = loanPetitionList
-                .filter(lp -> (stateId == null || (lp.getStateId() != null && lp.getStateId().intValue() == stateId))
-                        && (loanTypeId == null || lp.getLoanTypeId() != null && lp.getLoanTypeId().equals(loanTypeId)))
-                .cache();
-        Mono<List<LoanPetition>> loanPetitionListSuscribe = loanPetitionListFiltered.collectList();
-        // 2) Total y paginación determinista (id DESC)
-        Mono<Long> totalElementFromList = loanPetitionListSuscribe.map(list -> (long) list.size());
+        return Mono.zip(rowsMono, totalMono).flatMap(tuple -> {
+            List<LoanPetitionResponse> rows = tuple.getT1();
 
-        Mono<List<LoanPetition>> pagedPetitionsMono = loanPetitionListSuscribe.map(list -> {
-            list.sort(Comparator.comparing(LoanPetition::getId, Comparator.nullsLast(Long::compareTo)).reversed());
-            int fromIdx = Math.max(0, page * size);
-            int toIdx = Math.min(list.size(), fromIdx + size);
-            if (fromIdx >= toIdx) return List.of();
-            return list.subList(fromIdx, toIdx);
+            long total = tuple.getT2();
+
+            LinkedHashSet<String> docs = rows.stream()
+                    .map(LoanPetitionResponse::getDocumentNumber)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+
+            Mono<Map<String, User>> users = Flux.fromIterable(docs)
+                    .flatMap(dn -> userRepository.findUserByDocumentNumber(dn)
+                            .onErrorResume(e -> Mono.just(User.builder().documentNumber(dn).build())), 6)
+                    .collectMap(User::getDocumentNumber, u -> u);
+
+            Map<String, List<PetitionItemDto>> itemsByDoc = new LinkedHashMap<>();
+            Map<String, BigDecimal> totalMonthlyByDoc = new LinkedHashMap<>();
+
+            for (LoanPetitionResponse r : rows) {
+                String documentNumber = r.getDocumentNumber();
+                PetitionItemDto item = PetitionItemDto.builder()
+                        .id(r.getId())
+                        .amount(r.getAmount())
+                        .term(r.getTerm())
+                        .email(r.getEmail())
+                        .documentNumber(documentNumber)
+                        .loanPetitionType(r.getLoanPetitionType())
+                        .interestRate(r.getInterestRate())
+                        .loanPetitionState(r.getLoanPetitionState())
+                        .build();
+                itemsByDoc.computeIfAbsent(documentNumber, k -> new ArrayList<>()).add(item);
+                totalMonthlyByDoc.putIfAbsent(documentNumber,
+                        Optional.ofNullable(r.getTotalMonthlyApproved()).orElse(BigDecimal.ZERO));
+            }
+            return users.map(usersByDoc -> {
+                List<DataGroupDto> data = new ArrayList<>(itemsByDoc.size());
+                for (Map.Entry<String, List<PetitionItemDto>> e : itemsByDoc.entrySet()) {
+                    String documentNumber = e.getKey();
+                    User u = usersByDoc.getOrDefault(documentNumber, User.builder().documentNumber(documentNumber).build());
+                    UserDto userDto = UserDto.builder()
+                            .documentNumber(u.getDocumentNumber())
+                            .name(u.getName())
+                            .lastName(u.getLastName())
+                            .email(u.getEmail())
+                            .salary(u.getSalary())
+                            .build();
+                    data.add(DataGroupDto.builder()
+                            .user(userDto)
+                            .loanPetitions(e.getValue())
+                            .totalMonthlyDebt(totalMonthlyByDoc.getOrDefault(documentNumber, BigDecimal.ZERO))
+                            .build());
+                }
+                int totalPages = (int) Math.ceil((double) total / safeSize);
+                return PagedDataResponse.builder()
+                        .page(PageDto.builder()
+                                .number(page)
+                                .size(safeSize)
+                                .totalElements(total)
+                                .totalPages(totalPages)
+                                .build())
+                        .data(data)
+                        .build();
+            });
         });
-
-        // 3) Catálogos (tipos y estados)
-        Mono<Map<Long, LoanType>> loanTypesByIdMono = loanTypeRepository.findAllLoanTypes()
-                .collectMap(LoanType::getId, lt -> lt);
-
-        Mono<Map<Long, State>> statesByIdMono = stateRepository.findAllStates()
-                .collectMap(State::getId, st -> st);
-
-        return Mono.zip(pagedPetitionsMono, totalElementFromList, loanTypesByIdMono, statesByIdMono)
-                .flatMap(tuple -> {
-                    List<LoanPetition> pagedPetitions = tuple.getT1();
-                    long totalElements = tuple.getT2();
-                    Map<Long, LoanType> loanTypesById = tuple.getT3();
-                    Map<Long, State> statesById = tuple.getT4();
-
-                    // 4) Documentos únicos de la página
-                    LinkedHashSet<String> documentNumbers = pagedPetitions.stream()
-                            .map(LoanPetition::getDocumentNumber)
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toCollection(LinkedHashSet::new));
-
-                    // 5) Usuarios (async, con fallback mínimo)
-                    Mono<Map<String, User>> usersByDocumentMono = Flux.fromIterable(documentNumbers)
-                            .flatMap(dn -> userRepository.findUserByDocumentNumber(dn)
-                                    .onErrorResume(e -> Mono.just(User.builder().documentNumber(dn).build())), 6)
-                            .collectMap(User::getDocumentNumber, u -> u);
-
-                    // 6) Agregado por usuario (sobre la página), usando tasa mensual directamente
-                    Map<String, BigDecimal> totalMonthlyDebtPerUser = new ConcurrentHashMap<>();
-                    for (LoanPetition lp : pagedPetitions) {
-                        String documentNumber = lp.getDocumentNumber();
-                        if (documentNumber == null) continue;
-
-                        State st = statesById.get(lp.getStateId());
-                        if (st == null) continue;
-
-                        // Solo solicitudes APROBADAS
-                        if (!"APROBADO".equalsIgnoreCase(st.getName())) continue;
-
-                        LoanType lt = loanTypesById.get(lp.getLoanTypeId());
-                        if (lt == null || lt.getInterestRate() == null || lp.getAmount() == null || lp.getTerm() == null)
-                            continue;
-
-                        BigDecimal monthly = monthlyDebtCalculation(lp.getAmount(), lt.getInterestRate(), lp.getTerm());
-                        totalMonthlyDebtPerUser.merge(documentNumber, monthly, BigDecimal::add);
-                    }
-
-                    // 7) Mapear a DTOs de ítems
-                    List<PetitionItemDto> itemDtos = pagedPetitions.stream().map(lp -> {
-                        LoanType lt = loanTypesById.get(lp.getLoanTypeId());
-                        State st = statesById.get(lp.getStateId());
-                        return PetitionItemDto.builder()
-                                .id(lp.getId())
-                                .amount(lp.getAmount())
-                                .term(lp.getTerm())
-                                .email(lp.getEmail())
-                                .documentNumber(lp.getDocumentNumber())
-                                .loanPetitionType(lt != null ? lt.getName() : null)
-                                .interestRate(lt != null ? lt.getInterestRate() : null) // mensual
-                                .loanPetitionState(st != null ? st.getName() : null)
-                                .build();
-                    }).toList();
-
-                    Map<String, List<PetitionItemDto>> itemsGroupedByDocument = itemDtos.stream()
-                            .collect(Collectors.groupingBy(PetitionItemDto::getDocumentNumber, LinkedHashMap::new, Collectors.toList()));
-
-                    return usersByDocumentMono.map(usersByDocument -> {
-                        List<UserGroupDto> groups = new ArrayList<>();
-                        for (Map.Entry<String, List<PetitionItemDto>> entry : itemsGroupedByDocument.entrySet()) {
-                            String dn = entry.getKey();
-                            List<PetitionItemDto> items = entry.getValue();
-                            User user = usersByDocument.getOrDefault(dn, User.builder().documentNumber(dn).build());
-                            UserDto userDto = UserDto.builder()
-                                    .documentNumber(user.getDocumentNumber())
-                                    .name(user.getName())
-                                    .lastName(user.getLastName())
-                                    .email(user.getEmail())
-                                    .salary(user.getSalary())
-                                    .build();
-                            AggregatesDto aggregatesDto = AggregatesDto.builder()
-                                    .totalMonthlyDebtAmountApproved(
-                                            totalMonthlyDebtPerUser.getOrDefault(dn, BigDecimal.ZERO)
-                                    )
-                                    .build();
-                            groups.add(UserGroupDto.builder()
-                                    .user(userDto)
-                                    .aggregates(aggregatesDto)
-                                    .items(items)
-                                    .build());
-                        }
-                        int totalPages = (int) Math.ceil((double) totalElements / Math.max(1, size));
-                        return PagedGroupedResponse.builder()
-                                .page(PageDto.builder()
-                                        .number(page)
-                                        .size(size)
-                                        .totalElements(totalElements)
-                                        .totalPages(totalPages)
-                                        .build())
-                                .groups(groups)
-                                .build();
-                    });
-                });
     }
 
     public Flux<LoanPetition> findAllPetitionsByEmail(String email) {

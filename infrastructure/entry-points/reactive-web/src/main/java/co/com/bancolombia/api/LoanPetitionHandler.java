@@ -2,6 +2,7 @@ package co.com.bancolombia.api;
 
 import co.com.bancolombia.api.dto.loanpetition.CreateLoanPetitionDto;
 import co.com.bancolombia.api.dto.loanpetition.LoanPetitionDto;
+import co.com.bancolombia.api.dto.pagination.PagedDataResponse;
 import co.com.bancolombia.api.mapper.LoanPetitionDtoMapper;
 import co.com.bancolombia.usecase.loanpetition.LoanPetitionUseCase;
 import jakarta.validation.ConstraintViolationException;
@@ -53,13 +54,13 @@ public class LoanPetitionHandler {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    public Mono<ServerResponse> getAllPetitionsGrouped(ServerRequest request) {
+    public Mono<ServerResponse> getAllPetitionsFiltered(ServerRequest request) {
         Integer stateId = request.queryParam("stateId").map(Integer::valueOf).orElse(null);
         Long loanTypeId = request.queryParam("loanTypeId").map(Long::valueOf).orElse(null);
-        String document = request.queryParam("document").orElse(null);
+        String documentNumber = request.queryParam("documentNumber").orElse(null);
         int page = Integer.parseInt(request.queryParam("page").orElse("0"));
         int size = Integer.parseInt(request.queryParam("size").orElse("10"));
-        return loanPetitionUseCase.findAllPetitionsFiltered(stateId, loanTypeId, document, page, size)
+        return loanPetitionUseCase.findAllPetitionsFiltered(stateId, loanTypeId, documentNumber, page, size)
                 .flatMap(data -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(data));

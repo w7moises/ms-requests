@@ -296,7 +296,7 @@ public class RouterRest {
                         .DELETE(ID_PATH, loanTypeHandler::deleteLoanType))
                 .path("/api/v1/loanPetitions", builder -> builder
                         .GET("", request -> loanPetitionHandler.getAllPetitions())
-                        .GET("/filters",loanPetitionHandler::getAllPetitionsGrouped)
+                        .GET("/filters",loanPetitionHandler::getAllPetitionsFiltered)
                         .POST("", loanPetitionHandler::createPetition)
                         .GET("/email/{email}", loanPetitionHandler::getPetitionsByEmail)
                         .GET("/document/{documentNumber}", loanPetitionHandler::getPetitionsByDocumentNumber))

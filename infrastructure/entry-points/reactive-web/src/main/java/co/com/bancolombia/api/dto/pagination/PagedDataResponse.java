@@ -1,6 +1,6 @@
 package co.com.bancolombia.api.dto.pagination;
 
-import co.com.bancolombia.api.dto.user.UserGroupDto;
+import co.com.bancolombia.api.dto.user.DataGroupDto;
 import lombok.*;
 
 import java.util.List;
@@ -9,7 +9,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PagedGroupedResponse {
+public class PagedDataResponse {
     private PageDto page;
-    private List<UserGroupDto> groups;
+    private List<DataGroupDto> data;
 }
