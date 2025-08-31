@@ -1,7 +1,10 @@
 package co.com.bancolombia.api.dto.pagination;
 
 import co.com.bancolombia.api.dto.user.DataGroupDto;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 

@@ -4,6 +4,7 @@ import co.com.bancolombia.model.loanpetition.LoanPetition;
 import co.com.bancolombia.model.loanpetition.gateways.LoanPetitionRepository;
 import co.com.bancolombia.model.loantype.LoanType;
 import co.com.bancolombia.model.loantype.gateways.LoanTypeRepository;
+import co.com.bancolombia.model.response.*;
 import co.com.bancolombia.model.state.State;
 import co.com.bancolombia.model.state.gateways.StateRepository;
 import co.com.bancolombia.model.user.User;
@@ -18,6 +19,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.mockito.Mockito.when;
 
@@ -39,7 +41,7 @@ class LoanPetitionUseCaseTest {
     LoanPetitionUseCase useCase;
 
     private static final User USER_WALTER = User.builder()
-            .id(7L).name("Walter").lastName("Molina")
+            .id(7L).name("Walter").lastName("Molina").salary(BigDecimal.valueOf(666L))
             .email("walter@acme.com").documentNumber("73727173")
             .build();
 
@@ -70,6 +72,43 @@ class LoanPetitionUseCaseTest {
             .stateId(100L)
             .loanTypeId(10L)
             .build();
+
+    private static final PageDto pageDto = PageDto.builder()
+            .number(0)
+            .size(5)
+            .totalElements(10L)
+            .totalPages(2)
+            .build();
+
+    private static final List<DataGroupDto> data = List.of(
+            DataGroupDto.builder()
+                    .user(UserDto.builder()
+                            .documentNumber("73727173")
+                            .name("Walter")
+                            .lastName("Molina")
+                            .email("walter@acme.com")
+                            .salary(BigDecimal.valueOf(666))
+                            .build())
+                    .loanPetitions(List.of(
+                            PetitionItemDto.builder()
+                                    .id(1L)
+                                    .amount(BigDecimal.valueOf(666L))
+                                    .term(3)
+                                    .email("w@gmail.com")
+                                    .documentNumber("73727173")
+                                    .loanPetitionType("PRESTAMO1")
+                                    .interestRate(BigDecimal.TEN)
+                                    .loanPetitionState("APROBADO")
+                                    .build()
+                    ))
+                    .totalMonthlyDebt(BigDecimal.ZERO)
+                    .build()
+    );
+
+    private static final PagedDataResponse pagedDataResponse = new PagedDataResponse(pageDto, data);
+
+    private static final LoanPetitionResponse loanPetitionResponse = new LoanPetitionResponse(1L, BigDecimal.valueOf(666L), 3, "w@gmail.com", "73727173", "PRESTAMO1",
+            BigDecimal.TEN, "APROBADO", BigDecimal.ZERO);
 
     @BeforeEach
     void setUp() {
@@ -115,6 +154,17 @@ class LoanPetitionUseCaseTest {
                 .thenReturn(Flux.just(PETITION_SAVED));
         StepVerifier.create(useCase.findAllPetitionsByDocumentNumber("73727173"))
                 .expectNext(PETITION_SAVED)
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldFindPetitionsFiltered() {
+        when(loanPetitionRepository.findLoanPetitionsPageFiltered(null, null, null, 5, 0))
+                .thenReturn(Flux.just(loanPetitionResponse));
+        when(userRepository.findUserByDocumentNumber("73727173")).thenReturn(Mono.just(USER_WALTER));
+        when(loanPetitionRepository.countFiltered(null, null, null)).thenReturn(Mono.just(10L));
+        StepVerifier.create(useCase.findAllPetitionsFiltered(null, null, null, 0, 5))
+                .expectNext(pagedDataResponse)
                 .verifyComplete();
     }
 }

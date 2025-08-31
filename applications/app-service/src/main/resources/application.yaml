@@ -19,8 +19,8 @@ spring:
           client-id: "myclientid"
 adapter:
   restconsumer:
-    timeout: 5000
-    url: "http://localhost:8080"
+    timeout: ${ADAPTER_RESTCONSUMER_TIMEOUT:5000}
+    url: ${ADAPTER_RESTCONSUMER_URL:http://localhost:8080}
 management:
   health:
     circuitbreakers:
@@ -62,9 +62,9 @@ cors:
 
 adapters:
   r2dbc:
-    host: "localhost"
-    port: 5432
-    database: "ms_request"
-    schema: "public"
-    username: "postgres"
-    password: "admin123"
+    host: ${DB_HOST:localhost}
+    port: ${DB_PORT:5432}
+    database: ${DB_NAME:ms_request}
+    schema: ${DB_SCHEMA:public}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:admin123}

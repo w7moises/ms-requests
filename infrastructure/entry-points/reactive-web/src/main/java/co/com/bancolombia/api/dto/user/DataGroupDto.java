@@ -2,7 +2,10 @@ package co.com.bancolombia.api.dto.user;
 
 import co.com.bancolombia.model.response.PetitionItemDto;
 import co.com.bancolombia.model.response.UserDto;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;

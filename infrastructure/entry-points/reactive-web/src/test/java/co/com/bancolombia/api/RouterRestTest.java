@@ -8,6 +8,7 @@ import co.com.bancolombia.api.mapper.LoanPetitionDtoMapperImpl;
 import co.com.bancolombia.api.mapper.LoanTypeDtoMapperImpl;
 import co.com.bancolombia.model.loanpetition.LoanPetition;
 import co.com.bancolombia.model.loantype.LoanType;
+import co.com.bancolombia.model.response.*;
 import co.com.bancolombia.model.state.State;
 import co.com.bancolombia.usecase.loanpetition.LoanPetitionUseCase;
 import co.com.bancolombia.usecase.loantype.LoanTypeUseCase;
@@ -16,9 +17,11 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -26,7 +29,10 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -37,9 +43,11 @@ import static org.mockito.Mockito.when;
         LoanPetitionHandler.class
 })
 @WebFluxTest(excludeAutoConfiguration = {
-        org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration.class
+        org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class
 })
 @Import({LoanTypeDtoMapperImpl.class, LoanPetitionDtoMapperImpl.class})
+@AutoConfigureWebTestClient
 class RouterRestTest {
     @Autowired
     private WebTestClient webTestClient;
@@ -54,6 +62,7 @@ class RouterRestTest {
     private LoanPetitionUseCase loanPetitionUseCase;
 
     private State stateMock;
+    private PagedDataResponse pagedDataResponse;
     private State stateUpdated;
     private LoanType loanTypeMock;
     private LoanType loanTypeUpdated;
@@ -65,6 +74,37 @@ class RouterRestTest {
     void setup() {
         stateMock = new State(1L, "APROBADO", "Estado aprobado");
         stateUpdated = new State(1L, "RECHAZADO", "Estado rechazado");
+        PageDto pageDto = PageDto.builder()
+                .number(0)
+                .size(5)
+                .totalElements(10L)
+                .totalPages(2)
+                .build();
+        List<DataGroupDto> data = List.of(
+                DataGroupDto.builder()
+                        .user(UserDto.builder()
+                                .documentNumber("63636387")
+                                .name("Walter")
+                                .lastName("Molina")
+                                .email("aea@gmail.com")
+                                .salary(new BigDecimal("5000"))
+                                .build())
+                        .loanPetitions(List.of(
+                                PetitionItemDto.builder()
+                                        .id(1L)
+                                        .amount(new BigDecimal("10000"))
+                                        .term(12)
+                                        .email("aea@gmail.com")
+                                        .documentNumber("63636387")
+                                        .loanPetitionType("PERSONAL")
+                                        .interestRate(new BigDecimal("5.5"))
+                                        .loanPetitionState("APPROVED")
+                                        .build()
+                        ))
+                        .totalMonthlyDebt(new BigDecimal("500"))
+                        .build()
+        );
+        pagedDataResponse = new PagedDataResponse(pageDto, data);
         loanTypeMock = LoanType.builder()
                 .id(1L)
                 .name("Personal")
@@ -242,7 +282,11 @@ class RouterRestTest {
     void shouldCreateLoanPetition() {
         when(loanPetitionUseCase.savePetition(any(LoanPetition.class)))
                 .thenReturn(Mono.just(loanPetitionMock));
-        webTestClient.post()
+        webTestClient
+                .mutateWith(SecurityMockServerConfigurers.mockJwt()
+                        .jwt(jwt -> jwt.claim("email", "test@gmail.com")
+                                .claim("document", "12345678")))
+                .post()
                 .uri("/api/v1/loanPetitions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(createLoanPetitionDto)
@@ -250,5 +294,21 @@ class RouterRestTest {
                 .expectStatus().isOk()
                 .expectBody(LoanPetitionDto.class)
                 .value(petition -> Assertions.assertThat(petition.id()).isEqualTo(1L));
+    }
+
+    @Test
+    void shouldGetLoanPetitionsFiltered() {
+        when(loanPetitionUseCase.findAllPetitionsFiltered(null, null, null, 0, 5))
+                .thenReturn(Mono.just(pagedDataResponse));
+
+        webTestClient.get()
+                .uri("/api/v1/loanPetitions/filters?page=0&size=5")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(PagedDataResponse.class)
+                .value(response -> {
+                    assertNotNull(response);
+                    assertEquals(1, response.getData().size());
+                });
     }
 }

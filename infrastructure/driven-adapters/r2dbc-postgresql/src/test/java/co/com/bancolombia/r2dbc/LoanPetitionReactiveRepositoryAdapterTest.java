@@ -1,6 +1,7 @@
 package co.com.bancolombia.r2dbc;
 
 import co.com.bancolombia.model.loanpetition.LoanPetition;
+import co.com.bancolombia.model.response.LoanPetitionResponse;
 import co.com.bancolombia.r2dbc.entity.LoanPetitionEntity;
 import co.com.bancolombia.r2dbc.exception.NotFoundException;
 import co.com.bancolombia.r2dbc.repository.LoanPetitionReactiveRepository;
@@ -33,6 +34,7 @@ class LoanPetitionReactiveRepositoryAdapterTest {
 
     private LoanPetitionEntity petitionEntity;
     private LoanPetition petition;
+    private LoanPetitionResponse loanPetitionResponse;
 
     @BeforeEach
     void setUp() {
@@ -54,6 +56,8 @@ class LoanPetitionReactiveRepositoryAdapterTest {
                 .stateId(1L)
                 .loanTypeId(1L)
                 .build();
+        loanPetitionResponse = new LoanPetitionResponse(1L, BigDecimal.valueOf(666L), 3, "w@gmail.com", "123321123", "PRESTAMO1",
+                BigDecimal.TEN, "APROBADO", BigDecimal.ZERO);
     }
 
     @Test
@@ -102,5 +106,22 @@ class LoanPetitionReactiveRepositoryAdapterTest {
         StepVerifier.create(adapter.findAllPetitionsByEmail(email))
                 .expectError(NotFoundException.class)
                 .verify();
+    }
+
+    @Test
+    void shouldCountPetitionsFiltered() {
+        when(repository.countFiltered(1, 1L, "73938123")).thenReturn(Mono.just(1L));
+        StepVerifier.create(adapter.countFiltered(1, 1L, "73938123"))
+                .expectNext(1L)
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldFindPetitionsFiltered() {
+        when(repository.findLoanPetitionsPageFiltered(null, null, null, 0, 5))
+                .thenReturn(Flux.just(loanPetitionResponse));
+        StepVerifier.create(adapter.findLoanPetitionsPageFiltered(null, null, null, 0, 5))
+                .expectNext(loanPetitionResponse)
+                .verifyComplete();
     }
 }
