@@ -9,5 +9,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.4.0'
     implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+    testImplementation 'org.springframework.security:spring-security-test'
     annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
 }

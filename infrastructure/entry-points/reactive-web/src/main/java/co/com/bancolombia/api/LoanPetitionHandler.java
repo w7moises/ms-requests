@@ -2,7 +2,6 @@ package co.com.bancolombia.api;
 
 import co.com.bancolombia.api.dto.loanpetition.CreateLoanPetitionDto;
 import co.com.bancolombia.api.dto.loanpetition.LoanPetitionDto;
-import co.com.bancolombia.api.dto.pagination.PagedDataResponse;
 import co.com.bancolombia.api.mapper.LoanPetitionDtoMapper;
 import co.com.bancolombia.usecase.loanpetition.LoanPetitionUseCase;
 import jakarta.validation.ConstraintViolationException;
@@ -14,8 +13,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
-
-import java.math.BigDecimal;
 
 import static co.com.bancolombia.api.utils.TokenInformationMapper.getDocumentNumberFromToken;
 

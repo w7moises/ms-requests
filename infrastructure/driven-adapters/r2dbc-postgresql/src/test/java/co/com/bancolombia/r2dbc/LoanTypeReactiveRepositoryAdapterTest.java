@@ -18,7 +18,7 @@ import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class LoanTypeReactiveRepositoryAdapterTest {

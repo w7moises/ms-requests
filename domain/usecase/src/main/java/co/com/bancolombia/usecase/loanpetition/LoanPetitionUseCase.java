@@ -52,17 +52,19 @@ public class LoanPetitionUseCase {
 
         int safeSize = Math.max(1, size);
         int offset = Math.max(0, page) * safeSize;
-        Mono<List<LoanPetitionResponse>> rowsMono = loanPetitionRepository
+        Mono<List<LoanPetitionResponse>> loanPetitions = loanPetitionRepository
                 .findLoanPetitionsPageFiltered(stateId, loanTypeId, document, safeSize, offset)
-                .collectList();
-        Mono<Long> totalMono = loanPetitionRepository.countFiltered(stateId, loanTypeId, document);
+                .collectList()
+                .defaultIfEmpty(Collections.emptyList());
+        Mono<Long> totalMono = loanPetitionRepository.countFiltered(stateId, loanTypeId, document)
+                .defaultIfEmpty(0L);
 
-        return Mono.zip(rowsMono, totalMono).flatMap(tuple -> {
-            List<LoanPetitionResponse> rows = tuple.getT1();
+        return Mono.zip(loanPetitions, totalMono).flatMap(tuple -> {
+            List<LoanPetitionResponse> loanPetitionList = tuple.getT1();
 
             long total = tuple.getT2();
 
-            LinkedHashSet<String> docs = rows.stream()
+            LinkedHashSet<String> docs = loanPetitionList.stream()
                     .map(LoanPetitionResponse::getDocumentNumber)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -75,7 +77,7 @@ public class LoanPetitionUseCase {
             Map<String, List<PetitionItemDto>> itemsByDoc = new LinkedHashMap<>();
             Map<String, BigDecimal> totalMonthlyByDoc = new LinkedHashMap<>();
 
-            for (LoanPetitionResponse r : rows) {
+            for (LoanPetitionResponse r : loanPetitionList) {
                 String documentNumber = r.getDocumentNumber();
                 PetitionItemDto item = PetitionItemDto.builder()
                         .id(r.getId())
