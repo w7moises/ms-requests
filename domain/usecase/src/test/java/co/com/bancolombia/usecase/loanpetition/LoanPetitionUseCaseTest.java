@@ -2,6 +2,7 @@ package co.com.bancolombia.usecase.loanpetition;
 
 import co.com.bancolombia.model.loanpetition.LoanPetition;
 import co.com.bancolombia.model.loanpetition.gateways.LoanPetitionRepository;
+import co.com.bancolombia.model.loanpetition.gateways.SqsGateway;
 import co.com.bancolombia.model.loantype.LoanType;
 import co.com.bancolombia.model.loantype.gateways.LoanTypeRepository;
 import co.com.bancolombia.model.response.*;
@@ -21,6 +22,8 @@ import reactor.test.StepVerifier;
 import java.math.BigDecimal;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,6 +37,9 @@ class LoanPetitionUseCaseTest {
 
     @Mock
     StateRepository stateRepository;
+
+    @Mock
+    SqsGateway sqsGateway;
 
     @Mock
     LoanTypeRepository loanTypeRepository;
@@ -112,17 +118,21 @@ class LoanPetitionUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new LoanPetitionUseCase(loanPetitionRepository, userRepository, stateRepository, loanTypeRepository);
+        useCase = new LoanPetitionUseCase(loanPetitionRepository, userRepository, stateRepository, loanTypeRepository, sqsGateway);
     }
 
     @Test
     void shouldSavePetition() {
         when(loanTypeRepository.findLoanTypeByMinAndMaxAmount(new BigDecimal("1500.00")))
                 .thenReturn(Mono.just(LOAN_MICRO));
+        when(loanPetitionRepository.findAllPetitionsByDocumentNumber(anyString()))
+                .thenReturn(Flux.just(PETITION_SAVED));
         when(userRepository.findUserByDocumentNumber("73727173"))
                 .thenReturn(Mono.just(USER_WALTER));
         when(stateRepository.findAllStates())
                 .thenReturn(Flux.just(STATE_PENDIENTE));
+        when(sqsGateway.sendInfoToLambdaDebtCapacity(anyList()))
+                .thenReturn(Mono.just(true));
         when(loanPetitionRepository.savePetition(PETITION_NEW))
                 .thenReturn(Mono.just(PETITION_SAVED));
         StepVerifier.create(useCase.savePetition(PETITION_NEW))

@@ -76,4 +76,13 @@ public class LoanPetitionHandler {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(loanPetitionUseCase.findAllPetitionsByDocumentNumber(documentNumber), LoanPetitionDto.class);
     }
+
+    @PreAuthorize("hasRole('ADVISER')")
+    public Mono<ServerResponse> approvePetition(ServerRequest request) {
+        Long petitionId = request.queryParam("petitionId").map(Long::valueOf).orElse(null);
+        Long stateId = request.queryParam("stateId").map(Long::valueOf).orElse(0L);
+        return ServerResponse.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(loanPetitionUseCase.approveLoanPetition(petitionId, stateId), Boolean.class);
+    }
 }
