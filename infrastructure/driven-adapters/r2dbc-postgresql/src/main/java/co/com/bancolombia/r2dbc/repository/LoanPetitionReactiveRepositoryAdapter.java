@@ -2,6 +2,7 @@ package co.com.bancolombia.r2dbc.repository;
 
 import co.com.bancolombia.model.loanpetition.LoanPetition;
 import co.com.bancolombia.model.loanpetition.gateways.LoanPetitionRepository;
+import co.com.bancolombia.model.response.LoanPetitionInformation;
 import co.com.bancolombia.model.response.LoanPetitionResponse;
 import co.com.bancolombia.r2dbc.entity.LoanPetitionEntity;
 import co.com.bancolombia.r2dbc.exception.NotFoundException;
@@ -33,6 +34,12 @@ public class LoanPetitionReactiveRepositoryAdapter extends ReactiveAdapterOperat
         return super.save(loanPetition);
     }
 
+    @Override
+    public Mono<LoanPetition> findPetitionById(Long id) {
+        return super.findById(id)
+                .switchIfEmpty(Mono.error(new NotFoundException("loanPetition.notFound.id", id)));
+    }
+
     @Transactional(transactionManager = "r2dbcTransactionManager", readOnly = true)
     @Override
     public Flux<LoanPetition> findAllPetitions() {
@@ -52,6 +59,13 @@ public class LoanPetitionReactiveRepositoryAdapter extends ReactiveAdapterOperat
     public Flux<LoanPetition> findAllPetitionsByDocumentNumber(String documentNumber) {
         return repository.findAllByDocumentNumber(documentNumber)
                 .map(this::toEntity)
+                .switchIfEmpty(Mono.error(new NotFoundException("loanPetition.notFound.documentNumber", documentNumber)));
+    }
+
+    @Transactional(transactionManager = "r2dbcTransactionManager", readOnly = true)
+    @Override
+    public Flux<LoanPetitionInformation> findAllPetitionInformationByDocumentNumber(String documentNumber, Long id) {
+        return repository.findInformationByDocument(documentNumber, id)
                 .switchIfEmpty(Mono.error(new NotFoundException("loanPetition.notFound.documentNumber", documentNumber)));
     }
 

@@ -1,5 +1,6 @@
 package co.com.bancolombia.r2dbc.repository;
 
+import co.com.bancolombia.model.response.LoanPetitionInformation;
 import co.com.bancolombia.model.response.LoanPetitionResponse;
 import co.com.bancolombia.r2dbc.entity.LoanPetitionEntity;
 import org.springframework.data.r2dbc.repository.Query;
@@ -80,4 +81,30 @@ public interface LoanPetitionReactiveRepository extends ReactiveCrudRepository<L
             @Param("loanTypeId") Long loanTypeId,
             @Param("doc") String doc
     );
+
+    @Query("""
+            (
+              SELECT
+                lp.id, lp.amount, lp.term, lp.email, lp.document_number,
+                s.name AS state, lt.interest_rate, lt.automatic_validation
+              FROM loan_petitions lp
+              JOIN loan_types lt ON lt.id = lp.loan_type_id
+              JOIN states s      ON s.id  = lp.state_id
+              WHERE lp.document_number = :doc
+                AND lp.state_id = 1
+                AND (:lastId IS NULL OR lp.id <= :lastId)
+            )
+            UNION
+            (
+              SELECT
+                lp.id, lp.amount, lp.term, lp.email, lp.document_number,
+                s.name AS state, lt.interest_rate, lt.automatic_validation
+              FROM loan_petitions lp
+              JOIN loan_types lt ON lt.id = lp.loan_type_id
+              JOIN states s      ON s.id  = lp.state_id
+              WHERE lp.id = :lastId
+            )
+            ORDER BY id DESC
+            """)
+    Flux<LoanPetitionInformation> findInformationByDocument(@Param("document") String document, @Param("id") Long id);
 }

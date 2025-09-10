@@ -19,8 +19,15 @@ spring:
           client-id: "myclientid"
 adapter:
   restconsumer:
-    timeout: ${ADAPTER_RESTCONSUMER_TIMEOUT:5000}
-    url: ${ADAPTER_RESTCONSUMER_URL:http://localhost:8080}
+    timeout: "${ADAPTER_RESTCONSUMER_TIMEOUT:5000}"
+    url: "${ADAPTER_RESTCONSUMER_URL:http://localhost:8080}"
+  sqs:
+    region: "us-east-2"
+    queueUrl: "https://sqs.us-east-2.amazonaws.com/101257773684/aprobacion.fifo"
+    queueUrl2: "https://sqs.us-east-2.amazonaws.com/101257773684/calcular-endeudamiento.fifo"
+    endpoint: "http://localhost:4566"
+    fifo: true
+    messageGroupPrefix: "request-"
 management:
   health:
     circuitbreakers:
@@ -59,12 +66,11 @@ jwt:
   secret-base64: "q2Tt7cQ7Yb1j0x8C6q1r3kCw9UYw1QmV1wq3x8iWg0c1m6rKzG3mZw=="
 cors:
   allowed-origins: "http://localhost:4200,http://localhost:8080"
-
 adapters:
   r2dbc:
-    host: ${DB_HOST:localhost}
-    port: ${DB_PORT:5432}
-    database: ${DB_NAME:ms_request}
-    schema: ${DB_SCHEMA:public}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:admin123}
+    host: "${DB_HOST:localhost}"
+    port: "${DB_PORT:5432}"
+    database: "${DB_NAME:ms_request}"
+    schema: "${DB_SCHEMA:public}"
+    username: "${DB_USERNAME:postgres}"
+    password: "${DB_PASSWORD:admin123}"
