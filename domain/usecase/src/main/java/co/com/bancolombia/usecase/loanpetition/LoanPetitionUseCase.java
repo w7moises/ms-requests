@@ -35,7 +35,6 @@ public class LoanPetitionUseCase {
         Mono<State> state = stateRepository.findAllStates()
                 .filter(s -> "PENDIENTE DE REVISION".equalsIgnoreCase(s.getName()))
                 .next();
-
         return Mono.zip(loanType, user, state)
                 .flatMap(tuple -> {
                     LoanType loanTypeData = tuple.getT1();
@@ -61,6 +60,10 @@ public class LoanPetitionUseCase {
                                             )
                             );
                 });
+    }
+
+    public Mono<LoanPetition> changePetitionStatus(Long status, Long petitionId) {
+        return loanPetitionRepository.changePetitionStatus(status, petitionId);
     }
 
     public Flux<LoanPetition> findAllPetitions() {

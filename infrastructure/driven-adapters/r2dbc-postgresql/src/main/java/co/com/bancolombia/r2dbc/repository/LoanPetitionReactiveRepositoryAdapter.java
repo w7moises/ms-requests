@@ -40,6 +40,16 @@ public class LoanPetitionReactiveRepositoryAdapter extends ReactiveAdapterOperat
                 .switchIfEmpty(Mono.error(new NotFoundException("loanPetition.notFound.id", id)));
     }
 
+    @Override
+    public Mono<LoanPetition> changePetitionStatus(Long status, Long petitionId) {
+        return super.findById(petitionId)
+                .switchIfEmpty(Mono.error(new NotFoundException("loanPetition.notFound.id", petitionId)))
+                .flatMap(data -> {
+                    data.setStateId(status);
+                    return super.save(data);
+                });
+    }
+
     @Transactional(transactionManager = "r2dbcTransactionManager", readOnly = true)
     @Override
     public Flux<LoanPetition> findAllPetitions() {

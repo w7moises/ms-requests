@@ -11,6 +11,8 @@ public interface LoanPetitionRepository {
 
     Mono<LoanPetition> findPetitionById(Long id);
 
+    Mono<LoanPetition> changePetitionStatus(Long status, Long petitionId);
+
     Flux<LoanPetition> findAllPetitions();
 
     Flux<LoanPetition> findAllPetitionsByEmail(String email);

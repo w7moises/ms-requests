@@ -300,7 +300,8 @@ public class RouterRest {
                         .GET("/approve", loanPetitionHandler::approvePetition)
                         .POST("", loanPetitionHandler::createPetition)
                         .GET("/email/{email}", loanPetitionHandler::getPetitionsByEmail)
-                        .GET("/document/{documentNumber}", loanPetitionHandler::getPetitionsByDocumentNumber))
+                        .GET("/document/{documentNumber}", loanPetitionHandler::getPetitionsByDocumentNumber)
+                        .GET("/change-status", loanPetitionHandler::changePetitionStatus))
                 .build();
     }
 }

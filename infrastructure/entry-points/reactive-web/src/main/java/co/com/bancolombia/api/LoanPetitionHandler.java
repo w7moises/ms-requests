@@ -85,4 +85,12 @@ public class LoanPetitionHandler {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(loanPetitionUseCase.approveLoanPetition(petitionId, stateId), Boolean.class);
     }
+
+    public Mono<ServerResponse> changePetitionStatus(ServerRequest request) {
+        Long status = request.queryParam("status").map(Long::valueOf).orElse(null);
+        Long petitionId = request.queryParam("petitionId").map(Long::valueOf).orElse(null);
+        return ServerResponse.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(loanPetitionUseCase.changePetitionStatus(status, petitionId), Boolean.class);
+    }
 }
